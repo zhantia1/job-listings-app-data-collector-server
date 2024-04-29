@@ -1,0 +1,10 @@
+global:
+  scrape_interval:     15s # How frequently to scrape targets
+  evaluation_interval: 15s # How frequently to evaluate rules
+
+scrape_configs:
+  - job_name: 'data-collector-server'
+    static_configs:
+      - targets: ['data-collector-server-app-d5efbc602ef8.herokuapp.com']
+    metrics_path: /metrics
+    scheme: https

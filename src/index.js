@@ -4,6 +4,7 @@ const axios = require('axios');
 const mysql = require('mysql2');
 const cors = require('cors');
 const url = require('url');
+const { register, collectDefaultMetrics } = require('prom-client');
 
 const env = process.env.ENVIRONMENT || "dev";
 
@@ -19,6 +20,9 @@ if (env === "prod") {
         password: dbUrl.auth.split(':')[1],
         database: dbUrl.pathname.substring(1)
     });
+
+    // collect prometheus default metrics
+    collectDefaultMetrics();
 } else if (env !== "test") {
     pool = mysql.createPool({
         host: 'localhost',
@@ -247,6 +251,12 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 app.use(cors());
+
+// Set up Prometheus endpoint
+app.get('/metrics', (req, res) => {
+    res.set('Content-Type', register.contentType);
+    res.end(register.metrics());
+});
 
 // Route to collect data
 app.get('/collect-data', async (req, res) => {
