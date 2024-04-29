@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "ENVIRONMENT=test jest --forceExit",
+    "test-local": "ENVIRONMENT=test-local jest --forceExit",
+    "test": "ENVIRONMENT=test jest",
     "start": "node src/index.js"
   },
   "keywords": [],

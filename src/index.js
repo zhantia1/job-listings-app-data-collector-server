@@ -30,7 +30,7 @@ if (env === "prod") {
         password: `${process.env.DB_PASSWORD}`,
         database: 'project_database'
     });
-} else if (env === "test") {
+} else if (env === "test-local") {
     pool = mysql.createPool({
         host: 'localhost',
         user: 'root',
@@ -38,10 +38,14 @@ if (env === "prod") {
         database: 'test_database'
     });
 }
-
+// env === test is for testing in github actions
 
 // Promisify for Node.js async/await.
-promisePool = pool.promise();
+let promisePool
+if (env !== "test") {
+    promisePool = pool.promise();
+}
+
 
 async function initializeDatabase() {
     const createJobOneTableSql = `
@@ -302,18 +306,21 @@ app.get('/api/jobs', (req, res) => {
     });
   });
 
-
-initializeDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
+if (env !== "test") {
+    initializeDatabase().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
+        });
+    }).catch(error => {
+        console.error('Server startup failed:', error);
     });
-}).catch(error => {
-    console.error('Server startup failed:', error);
-});
+}
 
 
 module.exports = {
     app,
     promisePool,
     pool,
+    processEndpointOne,
+    processEndpointTwo,
 };

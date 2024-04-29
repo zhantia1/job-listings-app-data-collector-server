@@ -28,3 +28,7 @@ const pool = mysql.createPool({
 ```
 
 To run prometheus: `cd` into the `/prometheus` folder and run `prometheus --config.file=prometheus.yml` command
+
+There are 2 suites of tests:
+`npm run test-local` to run integration tests that will create a real test database instance and test against that
+`npm test` to run tests that are run by Github Actions since Github Actions has no access to a db instance.
