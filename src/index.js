@@ -4,6 +4,7 @@ const axios = require('axios');
 const mysql = require('mysql2');
 const cors = require('cors');
 const url = require('url');
+const amqp = require('amqplib');
 const { register, collectDefaultMetrics } = require('prom-client');
 
 const env = process.env.ENVIRONMENT || "dev";
@@ -246,6 +247,69 @@ const processEndpointTwo = async () => {
     }
 }
 
+// RABBITMQ ---------------------------------------------------------
+
+async function connectAndSendMessage() {
+  const conn = await amqp.connect(process.env.CLOUDAMQP_URL);
+  const channel = await conn.createChannel();
+  const queue = 'collect_data_queue';
+
+  await channel.assertQueue(queue, { durable: true });
+
+  // Message to trigger data collection
+  const message = { task: 'collect-data' };
+  channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+    persistent: true
+  });
+
+  console.log("Scheduled data collection task sent to queue.");
+
+  await channel.close();
+  await conn.close();
+}
+
+// Set an interval to run every 12 hours
+setInterval(connectAndSendMessage, 12 * 60 * 60 * 1000);
+
+const collectData = async () => {
+    await processEndpointOne();
+    await processEndpointTwo();
+}
+
+async function startConsumer() {
+    const conn = await amqp.connect(process.env.CLOUDAMQP_URL);
+    const channel = await conn.createChannel();
+    const queue = 'collect_data_queue';
+    const processQueue = 'process_data_queue';
+
+    await channel.assertQueue(collectQueue, { durable: true });
+    await channel.assertQueue(processQueue, { durable: true });
+    console.log("Consumer waiting for messages in %s", queue);
+
+    channel.consume(queue, async (msg) => {
+        if (msg !== null) {
+            console.log("Received:", msg.content.toString());
+
+            try {
+                // directly call the function that handles /collect-data logic
+                await collectData();
+                console.log("Data collection initiated and processed.");
+
+                const message = { task: 'process-data' };
+                channel.sendToQueue(processQueue, Buffer.from(JSON.stringify(message)), {
+                  persistent: true
+                });
+
+            } catch (error) {
+                console.error("Error during data processing:", error);
+            }
+
+            // Acknowledge the message
+            channel.ack(msg);
+        }
+    });
+}
+
 // SERVER CODE ---------------------------------------------------------
 
 const app = express();
@@ -263,8 +327,7 @@ app.get('/metrics', (req, res) => {
 // Route to collect data
 app.get('/collect-data', async (req, res) => {
     try {
-        await processEndpointOne();
-        await processEndpointTwo();
+        await collectData();
 
         res.status(200).json({ message: 'Data collected and saved successfully' });
     } catch (error) {
@@ -310,6 +373,12 @@ if (env !== "test") {
     initializeDatabase().then(() => {
         app.listen(PORT, () => {
             console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
+
+            startConsumer().then(() => {
+                console.log('RabbitMQ Consumer started successfully.');
+            }).catch(error => {
+                console.error('Failed to start RabbitMQ Consumer:', error);
+            });
         });
     }).catch(error => {
         console.error('Server startup failed:', error);
