@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const mysql = require('mysql2');
+const cors = require('cors');
 const url = require('url');
 
 const env = process.env.ENVIRONMENT || "dev";
@@ -244,8 +245,8 @@ const processEndpointTwo = async () => {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware to parse JSON bodies
 app.use(express.json());
+app.use(cors());
 
 // Route to collect data
 app.get('/collect-data', async (req, res) => {
@@ -263,6 +264,35 @@ app.get('/collect-data', async (req, res) => {
 app.get('/health-check', (req, res) => {
     res.status(200).json({ status: 'OK' });
 });
+
+app.get('/api/jobs', (req, res) => {
+    const limit = 50;  // Default limit to 50 jobs per page
+    const page = parseInt(req.query.page) || 1;  // Default to first page
+    const offset = (page - 1) * limit;
+  
+    const query = 'SELECT * FROM processed_jobs LIMIT ?, ?';
+  
+    pool.query(query, [offset, limit], (error, results) => {
+      if (error) {
+        return res.status(500).json({ error });
+      }
+  
+      pool.query('SELECT COUNT(*) AS count FROM processed_jobs', (error, countResults) => {
+        if (error) {
+          return res.status(500).json({ error });
+        }
+  
+        const count = countResults[0].count;
+        const pageCount = Math.ceil(count / limit);
+  
+        res.json({
+          page,
+          pageCount,
+          jobs: results
+        });
+      });
+    });
+  });
 
 if (env !== "test") {
     initializeDatabase().then(() => {
