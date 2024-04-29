@@ -163,11 +163,6 @@ const processEndpointOne = async () => {
 
 // ENDPOINT TWO ---------------------------------------------------------
 
-const APP_ID = process.env.APP_ID;
-const APP_KEY = process.env.APP_KEY;
-
-const JOB_ENDPOINT_TWO = `https://api.adzuna.com/v1/api/jobs/us/search/1?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=50&what=remote&sort_by=date`;
-
 function convertDateString(inputDateStr) {
     // Create a new Date object using the input string
     const date = new Date(inputDateStr);

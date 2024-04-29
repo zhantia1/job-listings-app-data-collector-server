@@ -26,3 +26,5 @@ const pool = mysql.createPool({
     database: 'project_database'
 });
 ```
+
+To run prometheus: `cd` into the `/prometheus` folder and run `prometheus --config.file=prometheus.yml` command
