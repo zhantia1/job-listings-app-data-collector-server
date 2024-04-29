@@ -82,7 +82,7 @@ async function initializeDatabase() {
             id VARCHAR(255) PRIMARY KEY NOT NULL,
             jobTitle VARCHAR(255),
             companyName VARCHAR(255),
-            location VARCHAR(100),
+            location VARCHAR(255),
             description TEXT,
             url VARCHAR(255) NOT NULL,
             date DATETIME
