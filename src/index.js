@@ -46,7 +46,7 @@ async function initializeDatabase() {
             companyLogo VARCHAR(255) NOT NULL,
             jobIndustry TEXT NOT NULL,
             jobType TEXT NOT NULL,
-            jobGeo VARCHAR(100) NOT NULL,
+            jobGeo VARCHAR(255) NOT NULL,
             jobLevel VARCHAR(100) NOT NULL,
             jobExcerpt TEXT NOT NULL,
             jobDescription TEXT NOT NULL,
