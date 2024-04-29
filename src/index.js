@@ -10,7 +10,7 @@ const env = process.env.ENVIRONMENT || "dev";
 
 let pool = undefined;
 if (env === "prod") {
-    const dbUrl = url.parse(process.env.DATABASE_URL);
+    const dbUrl = url.parse(process.env.CLEARDB_DATABASE_URL);
 
     pool = mysql.createPool({
         host: dbUrl.hostname,
