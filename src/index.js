@@ -23,22 +23,25 @@ if (env === "prod") {
 
     // collect prometheus default metrics
     collectDefaultMetrics();
-} else if (env !== "test") {
+} else if (env === "dev") {
     pool = mysql.createPool({
         host: 'localhost',
         user: 'root',
         password: `${process.env.DB_PASSWORD}`,
         database: 'project_database'
     });
+} else if (env === "test") {
+    pool = mysql.createPool({
+        host: 'localhost',
+        user: 'root',
+        password: `${process.env.DB_PASSWORD}`,
+        database: 'test_database'
+    });
 }
 
 
 // Promisify for Node.js async/await.
-let promisePool = undefined;
-if (env !== "test") {
-    promisePool = pool.promise();
-}
-
+promisePool = pool.promise();
 
 async function initializeDatabase() {
     const createJobOneTableSql = `
@@ -299,16 +302,18 @@ app.get('/api/jobs', (req, res) => {
     });
   });
 
-if (env !== "test") {
-    initializeDatabase().then(() => {
-        app.listen(PORT, () => {
-            console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
-        });
-    }).catch(error => {
-        console.error('Server startup failed:', error);
+
+initializeDatabase().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
     });
-}
+}).catch(error => {
+    console.error('Server startup failed:', error);
+});
+
 
 module.exports = {
     app,
+    promisePool,
+    pool,
 };
