@@ -256,7 +256,7 @@ async function connectAndSendMessage() {
 
   await channel.assertQueue(queue, { durable: true });
 
-  // Message to trigger data collection
+  // message to trigger data collection
   const message = { task: 'collect-data' };
   channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
     persistent: true
@@ -295,7 +295,7 @@ async function startConsumer() {
                 await collectData();
                 console.log("Data collection initiated and processed.");
 
-                const message = { task: 'process-data' };
+                const message = "trigger_process_data";
                 channel.sendToQueue(processQueue, Buffer.from(JSON.stringify(message)), {
                   persistent: true
                 });
