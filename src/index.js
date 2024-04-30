@@ -279,14 +279,14 @@ const collectData = async () => {
 async function startConsumer() {
     const conn = await amqp.connect(process.env.CLOUDAMQP_URL);
     const channel = await conn.createChannel();
-    const queue = 'collect_data_queue';
+    const collectQueue = 'collect_data_queue';
     const processQueue = 'process_data_queue';
 
     await channel.assertQueue(collectQueue, { durable: true });
     await channel.assertQueue(processQueue, { durable: true });
-    console.log("Consumer waiting for messages in %s", queue);
+    console.log("Consumer waiting for messages in %s", collectQueue);
 
-    channel.consume(queue, async (msg) => {
+    channel.consume(collectQueue, async (msg) => {
         if (msg !== null) {
             console.log("Received:", msg.content.toString());
 
@@ -374,11 +374,13 @@ if (env !== "test") {
         app.listen(PORT, () => {
             console.log(`Data-Collector-Server running on http://localhost:${PORT}`);
 
-            startConsumer().then(() => {
-                console.log('RabbitMQ Consumer started successfully.');
-            }).catch(error => {
-                console.error('Failed to start RabbitMQ Consumer:', error);
-            });
+            if (env !== "test-local") {
+                startConsumer().then(() => {
+                    console.log('RabbitMQ Consumer started successfully.');
+                }).catch(error => {
+                    console.error('Failed to start RabbitMQ Consumer:', error);
+                });
+            }
         });
     }).catch(error => {
         console.error('Server startup failed:', error);
@@ -392,4 +394,5 @@ module.exports = {
     pool,
     processEndpointOne,
     processEndpointTwo,
+    connectAndSendMessage,
 };

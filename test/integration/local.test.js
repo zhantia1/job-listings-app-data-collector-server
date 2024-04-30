@@ -1,7 +1,8 @@
 require('dotenv').config();
 const request = require('supertest');
-const { app, promisePool }  = require('../../src/index');
+const { app, promisePool, connectAndSendMessage }  = require('../../src/index');
 const mysql = require('mysql2/promise');
+const amqp = require('amqplib');
 
 const env = process.env.ENVIRONMENT;
 
@@ -97,6 +98,37 @@ if (env === "test-local") {
         expect(retrievedJobs).toEqual(expectedResult);
       })
     })
+
+    describe('RabbitMQ Integration', () => {
+        let connection, channel;
+      
+        it('sends a message to the queue correctly', async () => {
+
+            await connectAndSendMessage();
+        
+            connection = await amqp.connect('amqp://127.0.0.1:5672');
+            channel = await connection.createChannel();
+            await channel.assertQueue('collect_data_queue', { durable: true });
+
+            // Set up a consumer to check the message
+            const messages = [];
+            await new Promise((resolve, reject) => {
+                channel.consume('collect_data_queue', (msg) => {
+                    if (msg) {
+                        messages.push(JSON.parse(msg.content.toString()));
+                        channel.ack(msg);
+                        resolve();
+                    }
+                }, { noAck: false });
+            });
+
+            await channel.close();
+            await connection.close();
+
+            // Check if the expected message was received
+            expect(messages).toContainEqual({ task: 'collect-data' });
+        });
+      });
 }
 
 describe("test file must contain one test", () => {
